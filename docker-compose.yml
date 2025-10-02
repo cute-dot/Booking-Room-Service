@@ -1,0 +1,74 @@
+services:
+
+  booking-service:
+    container_name: booking-service
+    image: booking-service:local
+    environment:
+      JAVA_OPTS: -Xms256m -Xmx256m -XX:MaxMetaspaceSize=192m -Dfile.encoding=UTF-8
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: booking-room
+      DB_USERNAME: user
+      DB_PASSWORD: password
+    restart: always
+    ports:
+      - "8388:8388"
+    deploy:
+      resources:
+        limits:
+          memory: 450m
+        reservations:
+          memory: 350m
+    healthcheck:
+      test: curl --fail http://localhost:8388 || exit 1
+      interval: 60s
+      retries: 5
+      start_period: 20s
+      timeout: 10s
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - default
+
+  postgres:
+    image: postgres:16.10-alpine
+    hostname: postgres
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: booking-room
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    networks:
+      - default
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d booking-room || exit 1"]
+      interval: 30s
+      retries: 3
+      start_period: 15s
+      timeout: 5s
+    restart: always
+
+  dozzle:
+    container_name: dozzle
+    image: amir20/dozzle:latest
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+        reservations:
+          memory: 128m
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "${LOG_VIEWER_PORT}:8080"
+    networks:
+      - default
+
+volumes:
+  postgres_data:
