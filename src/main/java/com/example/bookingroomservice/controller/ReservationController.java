@@ -73,7 +73,7 @@ public class ReservationController {
             ReservationResponse updated = reservationService.updateReservation(request);
             return ResponseEntity.ok(updated);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.badRequest().build();
         }
     }
 }
